@@ -353,6 +353,8 @@ function Invoke-Maester {
 
     $pesterResults = Invoke-Pester -Configuration $pesterConfig
 
+    Write-Host pesterResults
+
     if ($pesterResults) {
 
         Write-MtProgress -Activity "Processing test results" -Status "$($pesterResults.TotalCount) test(s)" -Force

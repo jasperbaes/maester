@@ -1,0 +1,61 @@
+name: Maester Daily Tests
+
+on:
+  push:
+    branches: ["main"]
+  # Run once a day at midnight
+  schedule:
+    - cron: "0 0 * * *"
+  # Allows to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+permissions:
+      id-token: write
+      contents: read
+      checks: write
+
+jobs:
+  run-maester-tests:
+    name: Run Maester Tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set current date as env variable
+      run: echo "NOW=$(date +'%Y-%m-%d-T%H%M%S')" >> $GITHUB_ENV
+    - name: Run Maester
+      shell: pwsh
+      env:
+        TENANTID: ${{ secrets.AZURE_TENANT_ID }}
+        CLIENTID: ${{ secrets.AZURE_CLIENT_ID }}
+        CLIENTSECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      run: |
+        # Connect to Microsoft Graph
+        $clientSecret = ConvertTo-SecureString -AsPlainText $env:CLIENTSECRET -Force
+        [pscredential]$clientSecretCredential = New-Object System.Management.Automation.PSCredential($env:CLIENTID, $clientSecret)
+        Connect-MgGraph -TenantId $env:TENANTID -ClientSecretCredential $clientSecretCredential
+
+        # Install Maester
+        Install-Module Maester -Force
+
+        # Configure test results
+        $PesterConfiguration = New-PesterConfiguration
+        $PesterConfiguration.Output.Verbosity = 'None'
+
+        # Run Maester tests
+        $results = Invoke-Maester -Path tests/Maester/ -PesterConfiguration $PesterConfiguration -OutputFolder test-results -OutputFolderFileName "test-results" -PassThru
+
+        # Add step summary
+        $summary = Get-Content test-results/test-results.md
+        Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $summary
+
+        # Flag status to GitHub - Uncomment the block below to fail the build if tests fail
+        #if ($results.Result -ne 'Passed'){
+        #  Write-Error "Status = $($results.Result): See Maester Test Report below for details."
+        #}
+
+    - name: Archive Maester Html Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: maester-test-results-${{ env.NOW }}
+        path: test-results

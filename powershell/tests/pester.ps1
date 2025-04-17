@@ -96,6 +96,7 @@ if ($TestFunctions)
         $totalRun += $result.TotalCount
         $totalFailed += $result.FailedCount
         foreach ($test in $result.Tests) {
+            Write-Host $test
             if ($test.Result -notin 'Passed','Skipped') {
                 $failedTest = [pscustomobject]@{
                     Block   = $test.Block.ExpandedName

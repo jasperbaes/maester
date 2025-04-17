@@ -409,6 +409,7 @@ function Invoke-Maester {
 
         if ($Verbosity -eq 'None') {
             # Show final summary
+            Write-Host "`nTests: $($pesterResults)"  -ForegroundColor Green
             Write-Host "`nTests Passed ✅: $($pesterResults.PassedCount), " -NoNewline -ForegroundColor Green
             Write-Host "Failed ❌: $($pesterResults.FailedCount), " -NoNewline -ForegroundColor Red
             Write-Host "Skipped ⚫: $($pesterResults.SkippedCount)`n" -ForegroundColor DarkGray

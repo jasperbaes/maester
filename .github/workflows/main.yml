@@ -43,6 +43,7 @@ jobs:
 
         # Run Maester tests
         $results = Invoke-Maester -Path tests/Maester/ -PesterConfiguration $PesterConfiguration -OutputFolder test-results -OutputFolderFileName "test-results" -PassThru
+        Write-Host $results
 
         # Add step summary
         $summary = Get-Content test-results/test-results.md

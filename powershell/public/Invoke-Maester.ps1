@@ -351,6 +351,7 @@ function Invoke-Maester {
     Set-MtProgressView
     Write-MtProgress -Activity "Starting Maester" -Status "Discovering tests to run..." -Force
 
+    Write-Host $pesterConfig
     $pesterResults = Invoke-Pester -Configuration $pesterConfig
 
     Write-Host pesterResults
@@ -359,6 +360,7 @@ function Invoke-Maester {
 
         Write-MtProgress -Activity "Processing test results" -Status "$($pesterResults.TotalCount) test(s)" -Force
         $maesterResults = ConvertTo-MtMaesterResult $PesterResults
+        Write-Host $PesterResults.Tests
 
         if (![string]::IsNullOrEmpty($out.OutputJsonFile)) {
             $maesterResults | ConvertTo-Json -Depth 5 -WarningAction SilentlyContinue | Out-File -FilePath $out.OutputJsonFile -Encoding UTF8

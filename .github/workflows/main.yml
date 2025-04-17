@@ -42,9 +42,11 @@ jobs:
         $PesterConfiguration.Output.Verbosity = 'None'
 
         # Run Maester tests
-        $results = Invoke-Maester -Path tests/Maester/ -PesterConfiguration $PesterConfiguration -OutputFolder test-results -OutputFolderFileName "test-results" -PassThru
+        $results = Invoke-Maester -Path tests/Maester/ -PesterConfiguration $PesterConfiguration -OutputFolder test-results -OutputFolderFileName "test-results" -OutputJsonFile "results" -PassThru
         Write-Host $results
-        Write-Host $results.Tests
+
+        $jsonOutput = Get-Content test-results/results.json
+        Write-Host $jsonOutput
 
         # Add step summary
         $summary = Get-Content test-results/test-results.md

@@ -354,7 +354,6 @@ function Invoke-Maester {
     Write-Host $pesterConfig
     $pesterResults = Invoke-Pester -Configuration $pesterConfig
 
-    Write-Host pesterResults
 
     if ($pesterResults) {
 

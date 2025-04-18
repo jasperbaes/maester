@@ -102,13 +102,17 @@ jobs:
             # Continue if the Maester check failed
             if ($result.Result -eq "Failed") {
                 # Continue if no Jira issue yet exists that contains as title MT.XXXX and has status Open
-                $check = CheckIfJiraTicketExistsByName -name $result.Name.Split(':')[0]
-                if ($check -eq $false) {
-                    # Create Jira incident
-                    $name = $result.Name
-                    $description = "Test $name has failed. Please investigate."
-                    Create-JiraTicket -name $name -description $description
-                    Write-Output "Created JIRA ticket for $name"
+                try {
+                    $check = CheckIfJiraTicketExistsByName -name $result.Name.Split(':')[0]
+                    if ($check -eq $false) {
+                        # Create Jira incident
+                        $name = $result.Name
+                        $description = "Test $name has failed. Please investigate."
+                        Create-JiraTicket -name $name -description $description
+                        Write-Output "Created JIRA ticket for $name"
+                    }
+                } catch {  
+                    Write-Output "An error occurred while checking or creating the Jira ticket: $_"
                 }
             }
         }

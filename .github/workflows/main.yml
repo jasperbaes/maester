@@ -28,6 +28,8 @@ jobs:
         TENANTID: ${{ secrets.AZURE_TENANT_ID }}
         CLIENTID: ${{ secrets.AZURE_CLIENT_ID }}
         CLIENTSECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        JIRAEMAIL: ${{ secrets.JIRAEMAIL }}
+        JIRATOKEN: ${{ secrets.JIRATOKEN }}
       run: |
         # Connect to Microsoft Graph
         $clientSecret = ConvertTo-SecureString -AsPlainText $env:CLIENTSECRET -Force
@@ -109,7 +111,9 @@ jobs:
                         Create-JiraTicket -name $name -description $description
                         Write-Output "Created JIRA ticket for $name"
                     }
-                } catch {}
+                } catch {
+                  Write-Output "error"
+                }
             }
         }
 

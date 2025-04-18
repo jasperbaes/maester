@@ -76,8 +76,13 @@ jobs:
         }
         "@
         
-            $response = Invoke-RestMethod 'https://jasperbaes.atlassian.net/rest/api/3/issue' -Method 'POST' -Headers $headers -Body $body
-            $response | ConvertTo-Json
+            try {
+                $response = Invoke-RestMethod 'https://jasperbaes.atlassian.net/rest/api/3/issue' -Method 'POST' -Headers $headers -Body $body
+                $response | ConvertTo-Json
+                Write-Output "Created JIRA ticket for $name"
+            } catch {
+                Write-Output "Error: $_"
+            }
         }
         
         # Returns if a Jira ticket exists with a given search string
@@ -98,26 +103,35 @@ jobs:
             }
         }
         
+        # Initialize counters
+        $jiraTicketsCreated = 0
+        $failedTestsWithExistingJira = 0
+        
         # Loop over all Maester results
         foreach ($result in $results) {
             # Continue if the Maester check failed
             if ($result.Result -eq "Failed") {
                 # Continue if no Jira issue yet exists that contains as title MT.XXXX and has status Open
                 try {
-                    Write-Output $result
                     $check = CheckIfJiraTicketExistsByName -name $result.Name.Split(':')[0]
                     if ($check -eq $false) {
                         # Create Jira incident
                         $name = $result.Name
                         $description = "Test $name has failed. Please investigate."
                         Create-JiraTicket -name $name -description $description
-                        Write-Output "Created JIRA ticket for $name"
+                        $jiraTicketsCreated++
+                    } else {
+                        $failedTestsWithExistingJira++
                     }
                 } catch {
                     Write-Output "An error occurred while checking or creating the Jira ticket: $_"
                 }
             }
         }
+        
+        # Output the counters
+        Write-Output "Total Jira tickets created: $jiraTicketsCreated"
+        Write-Output "Total failed tests with existing Jira tickets: $failedTestsWithExistingJira"
 
     - name: Archive Maester Html Report
       uses: actions/upload-artifact@v4

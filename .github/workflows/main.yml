@@ -42,19 +42,75 @@ jobs:
 
         # Run Maester tests
         $results = Invoke-Maester -Path tests/Maester/ -PesterConfiguration $PesterConfiguration -OutputFolder test-results -OutputFolderFileName "test-results" -OutputJsonFile results.json -PassThru
-        Write-Host $results
-
-        $jsonOutput = Get-Content test-results/results.json
-        Write-Host $jsonOutput
-
-        # Add step summary
-        $summary = Get-Content test-results/test-results.md
-        Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $summary
-
-        # Flag status to GitHub - Uncomment the block below to fail the build if tests fail
-        #if ($results.Result -ne 'Passed'){
-        #  Write-Error "Status = $($results.Result): See Maester Test Report below for details."
-        #}
+        
+        # Generate Jira authentication bearer token
+        $Text = $env:JIRAEMAIL + ":" + $env:JIRATOKEN
+        $Bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
+        $global:EncodedText = [Convert]::ToBase64String($Bytes)
+        
+        # Function to create a JIRA ticket
+        function Create-JiraTicket {
+            param (
+                [string]$name,
+                [string]$description
+            )
+        
+            $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+            $headers.Add("Content-Type", "application/json")
+            $headers.Add("Authorization", "Basic $global:EncodedText")
+        
+        $body = @"
+        {
+            `"fields`":  {
+                        `"summary`":  `"$name`",
+                        `"project`":  {
+                                        `"key`":  `"MT`"
+                                    },
+                        `"issuetype`":  {
+                                            `"id`":  `"10001`"
+                                        }
+                    }
+        }
+        "@
+        
+            $response = Invoke-RestMethod 'https://jasperbaes.atlassian.net/rest/api/3/issue' -Method 'POST' -Headers $headers -Body $body
+            $response | ConvertTo-Json
+        }
+        
+        # Returns if a Jira ticket exists with a given search string
+        function CheckIfJiraTicketExistsByName {
+            param (
+                [string]$name
+            )
+        
+            try {
+                $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+                $headers.Add("Authorization", "Basic $global:EncodedText")
+                $response = Invoke-RestMethod "https://jasperbaes.atlassian.net/rest/api/3/search?jql=summary%20~%20%27$name%27" -Method 'GET' -Headers $headers
+                $response = $response.total
+                return $response -gt 0
+            } catch {
+                Write-Host "error"
+                return $false
+            }
+        }
+        
+        # Loop over all Maester results
+        foreach ($result in $results) {
+            # Continue if the Maester check failed
+            if ($result.Result -eq "Failed") {
+        
+                # Continue if no Jira issue yet exists that contains as title MT.XXXX and has status Open
+                $check = CheckIfJiraTicketExistsByName -name $result.Name.Split(':')[0]
+                if ($check -eq $false) {
+                    # Create Jira incident
+                    $name = $result.Name
+                    $description = "Test $name has failed. Please investigate."
+                    Create-JiraTicket -name $name -description $description
+                    Write-Output "Created JIRA ticket for $name"
+                }
+            }
+        }
 
     - name: Archive Maester Html Report
       uses: actions/upload-artifact@v4

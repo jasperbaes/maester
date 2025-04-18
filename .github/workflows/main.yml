@@ -44,6 +44,7 @@ jobs:
 
         # Run Maester tests
         $results = Invoke-Maester -Path tests/Maester/ -PesterConfiguration $PesterConfiguration -OutputFolder test-results -OutputFolderFileName "test-results" -OutputJsonFile results.json -PassThru
+        $results = $results.Tests | Select-Object Name, Result
         
         # Generate Jira authentication bearer token
         $Text = $env:JIRAEMAIL + ":" + $env:JIRATOKEN

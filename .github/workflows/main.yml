@@ -103,6 +103,7 @@ jobs:
             if ($result.Result -eq "Failed") {
                 # Continue if no Jira issue yet exists that contains as title MT.XXXX and has status Open
                 try {
+                    Write-Output $result.Name
                     $check = CheckIfJiraTicketExistsByName -name $result.Name.Split(':')[0]
                     if ($check -eq $false) {
                         # Create Jira incident
